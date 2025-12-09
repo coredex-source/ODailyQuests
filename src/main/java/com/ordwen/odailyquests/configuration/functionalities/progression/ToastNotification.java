@@ -14,7 +14,6 @@ import org.bukkit.advancement.Advancement;
 import org.bukkit.advancement.AdvancementProgress;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -108,12 +107,8 @@ public class ToastNotification implements IConfigurable {
         final NamespacedKey key = new NamespacedKey(ODailyQuests.INSTANCE, uniqueKey(player));
         final String json = buildAdvancementJson(visibleLine);
 
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                attemptToast(player, key, json);
-            }
-        }.runTask(ODailyQuests.INSTANCE);
+        ODailyQuests.morePaperLib.scheduling().entitySpecificScheduler(player)
+                .run(() -> attemptToast(player, key, json), null);
     }
 
     private void attemptToast(Player player, NamespacedKey key, String json) {
@@ -149,12 +144,8 @@ public class ToastNotification implements IConfigurable {
     }
 
     private void scheduleCleanup(Player player, NamespacedKey key) {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                revokeAndRemove(player, key);
-            }
-        }.runTaskLater(ODailyQuests.INSTANCE, CLEANUP_TICKS);
+        ODailyQuests.morePaperLib.scheduling().entitySpecificScheduler(player)
+                .runDelayed(() -> revokeAndRemove(player, key), null, CLEANUP_TICKS);
     }
 
     private void revokeAndRemove(Player player, NamespacedKey key) {

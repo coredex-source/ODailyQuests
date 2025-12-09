@@ -7,7 +7,6 @@ import com.ordwen.odailyquests.enums.QuestsPermissions;
 import com.ordwen.odailyquests.events.antiglitch.EntitySource;
 import com.ordwen.odailyquests.quests.player.progression.PlayerProgressor;
 import dev.rosewood.rosestacker.event.EntityStackMultipleDeathEvent;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -35,8 +34,9 @@ public class RoseStackerListener extends PlayerProgressor implements Listener {
 
         Debugger.write("EntityStackMultipleDeathEvent: onEntityUnstackEvent summoned by " + player.getName() + " for " + entity.getType() + ".");
 
-        Bukkit.getScheduler().runTask(ODailyQuests.INSTANCE, () ->
-                setPlayerQuestProgression(event, player, event.getEntityKillCount(), "KILL")
+        ODailyQuests.morePaperLib.scheduling().entitySpecificScheduler(player).run(() ->
+                setPlayerQuestProgression(event, player, event.getEntityKillCount(), "KILL"),
+                null
         );
     }
 }

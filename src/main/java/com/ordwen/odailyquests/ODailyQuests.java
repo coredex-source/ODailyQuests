@@ -109,8 +109,13 @@ public final class ODailyQuests extends JavaPlugin {
         /* Load dependencies */
         new IntegrationsManager(this).loadAllDependencies();
 
-        /* Hook CustomBlockData */
-        CustomBlockData.registerListener(this);
+        /* Hook CustomBlockData - skip on Folia to avoid piston performance issues */
+        if (!morePaperLib.scheduling().isUsingFolia()) {
+            CustomBlockData.registerListener(this);
+        } else {
+            PluginLogger.info("Folia detected: CustomBlockData piston listener disabled to prevent performance issues.");
+            PluginLogger.info("Note: Player-placed blocks moved by pistons will lose their tracking data.");
+        }
 
         /* Register all quest types, from main plugin or addons */
         registerQuestTypes();

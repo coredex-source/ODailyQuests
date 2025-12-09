@@ -55,7 +55,7 @@ dependencies {
     implementation 'space.arim.morepaperlib:morepaperlib:0.4.3'
 
     /* lib for antiglitch */
-    compileOnly 'com.jeff-media:custom-block-data:2.2.3'
+    implementation 'com.jeff-media:custom-block-data:2.2.5'
 
     /* Mojang auth API for heads */
     compileOnly 'com.mojang:authlib:1.5.25'
@@ -127,6 +127,7 @@ tasks.shadowJar {
     archiveFileName.set("${project.name}-${project.version}.jar")
     relocate 'io.papermc.lib', 'com.ordwen.odailyquests.lib.paperlib'
     relocate 'space.arim.morepaperlib', 'com.ordwen.odailyquests.lib.morepaperlib'
+    relocate 'com.jeff_media.customblockdata', 'com.ordwen.odailyquests.lib.customblockdata'
 }
 
 processResources {

@@ -128,7 +128,7 @@ public class InventoryClickListener extends ClickableChecker implements Listener
     }
 
     private void scheduleDeltaProgress(Merchant merchant, int idx, int beforeUses, int perTradeResult, Villager villager, MerchantRecipe selectedRecipe, QuestContext.Builder contextBuilder) {
-        Bukkit.getScheduler().runTask(ODailyQuests.INSTANCE, () -> {
+        ODailyQuests.morePaperLib.scheduling().entitySpecificScheduler(villager).run(() -> {
             try {
                 final MerchantRecipe afterRec = merchant.getRecipe(idx);
                 final int afterUses = afterRec.getUses();
@@ -151,7 +151,7 @@ public class InventoryClickListener extends ClickableChecker implements Listener
                 contextBuilder.villagerTrade(villager, selectedRecipe, perTradeResult);
                 processQuestCompletion(contextBuilder.build());
             }
-        });
+        }, null);
     }
 
     /* ======================  FURNACE  ====================== */
