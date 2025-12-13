@@ -13,6 +13,7 @@ import com.ordwen.odailyquests.tools.PluginLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,20 +44,55 @@ public class ReloadService {
     }
 
     /**
-     * Save all quests from connected players, to avoid errors on reload.
+     * Save all quests from connected players using bulk operation for maximum performance.
+     * This method is optimized for server shutdown/reload scenarios.
      */
     public void saveConnectedPlayerQuests() {
-        final Map<String, PlayerQuests> activeQuests = new HashMap<>(QuestsManager.getActiveQuests());
+        final Map<String, PlayerQuests> activeQuestsMap = QuestsManager.getActiveQuests();
+        if (activeQuestsMap == null || activeQuestsMap.isEmpty()) {
+            Debugger.write("No active quests to save - map is null or empty.");
+            return;
+        }
+
+        // Create snapshot to avoid ConcurrentModificationException
+        final Map<String, PlayerQuests> activeQuests = new HashMap<>(activeQuestsMap);
+        final int playerCount = activeQuests.size();
+        Debugger.write("Preparing bulk save for " + playerCount + " player(s)...");
+
+        // Prepare data for bulk save: Map<playerName, Entry<playerUUID, PlayerQuests>>
+        final Map<String, Map.Entry<String, PlayerQuests>> bulkSaveData = new HashMap<>();
+
         for (Map.Entry<String, PlayerQuests> entry : activeQuests.entrySet()) {
-            final Player player = Bukkit.getPlayer(entry.getKey());
-            if (player == null) {
-                Debugger.write("Impossible to save progression for player " + entry.getKey() + " because the player is offline.");
-                PluginLogger.warn("Impossible to save progression for player " + entry.getKey() + " because the player is offline.");
+            final String playerName = entry.getKey();
+            final PlayerQuests playerQuests = entry.getValue();
+
+            if (playerName == null || playerQuests == null) {
+                Debugger.write("Skipping null entry in activeQuests.");
                 continue;
             }
 
-            plugin.getDatabaseManager().saveProgressionForPlayer(player.getName(), player.getUniqueId().toString(), entry.getValue());
-            QuestsManager.getActiveQuests().remove(entry.getKey());
+            final Player player = Bukkit.getPlayer(playerName);
+            if (player == null) {
+                Debugger.write("Cannot save progression for player " + playerName + " - player is offline.");
+                // Still remove from active quests to clean up
+                QuestsManager.getActiveQuests().remove(playerName);
+                continue;
+            }
+
+            bulkSaveData.put(playerName, new AbstractMap.SimpleEntry<>(player.getUniqueId().toString(), playerQuests));
+        }
+
+        if (bulkSaveData.isEmpty()) {
+            Debugger.write("No valid player data to save.");
+            return;
+        }
+
+        // Use bulk save for maximum performance
+        plugin.getDatabaseManager().saveAllProgressionsBulk(bulkSaveData);
+
+        // Clear all saved players from active quests
+        for (String playerName : bulkSaveData.keySet()) {
+            QuestsManager.getActiveQuests().remove(playerName);
         }
     }
 

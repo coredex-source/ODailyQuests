@@ -119,23 +119,28 @@ public class QuestsManager implements Listener {
         Debugger.write("PlayerQuitEvent triggered.");
 
         final Player player = event.getPlayer();
+        if (player == null) {
+            Debugger.write("PlayerQuitEvent: player object is null, skipping.");
+            return;
+        }
+
         final String playerName = player.getName();
         final String playerUUID = player.getUniqueId().toString();
 
         Debugger.write("Player " + playerName + " left the server.");
 
-        final PlayerQuests playerQuests = activeQuests.get(playerName);
+        // Remove and get atomically to prevent race conditions
+        final PlayerQuests playerQuests = activeQuests.remove(playerName);
 
         if (playerQuests == null) {
-            Debugger.write("Player " + playerName + " not found in the array.");
-            PluginLogger.warn("Player quests not found for player " + playerName);
+            Debugger.write("Player " + playerName + " not found in the array (may not have been fully loaded yet).");
             return;
         }
 
+        // Save progression (DatabaseManager will handle null checks and async/sync decision)
         plugin.getDatabaseManager().saveProgressionForPlayer(playerName, playerUUID, playerQuests);
-        activeQuests.remove(playerName);
 
-        Debugger.write("Player " + playerName + " removed from the array.");
+        Debugger.write("Player " + playerName + " removed from the array and save initiated.");
     }
 
     /**

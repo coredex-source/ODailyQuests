@@ -1,6 +1,7 @@
 package com.ordwen.odailyquests.events.restart;
 
 import com.ordwen.odailyquests.ODailyQuests;
+import com.ordwen.odailyquests.configuration.essentials.Debugger;
 import com.ordwen.odailyquests.tools.PluginLogger;
 
 public class RestartHandler {
@@ -11,9 +12,17 @@ public class RestartHandler {
         this.plugin = oDailyQuests;
     }
 
+    /**
+     * Mark the server as stopping to ensure data is saved synchronously.
+     * This prevents async tasks from being scheduled during shutdown when
+     * the scheduler may already be terminated (especially on Folia).
+     */
     public void setServerStopping() {
-        PluginLogger.warn("Server is stopping. The datas will be saved in synchronous mode.");
-        PluginLogger.warn("If you think this is a mistake, please contact the developer!");
+        if (plugin.isServerStopping()) {
+            // Already marked as stopping, avoid duplicate messages
+            return;
+        }
+        Debugger.write("Server is stopping. Data will be saved synchronously to ensure integrity.");
         plugin.setServerStopping(true);
     }
 
